@@ -13,6 +13,7 @@ class FinishVC: UIViewController {
     @IBOutlet weak var totalVolumeLabel: UILabel!
     @IBOutlet weak var saveBtn: UIButton!
     var totalTime: String = ""
+    var totalVolume: Int = 0
    
     
     override func viewDidLoad() {
@@ -24,6 +25,7 @@ class FinishVC: UIViewController {
     private func configure() {
         saveBtn.layer.cornerRadius = 10
         totalTimeLabel.text = "총 운동시간: \(totalTime)"
+        totalVolumeLabel.text = "총 볼륨: \(totalVolume)"
     }
     
     @IBAction func tapSaveBtn(_ sender: UIButton) {

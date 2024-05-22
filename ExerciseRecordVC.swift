@@ -27,7 +27,7 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
     
     var timer: Timer?
     var seconds: Int = 0
-    var totalVolume: Int = 0
+
     
     var exerciseArray = [ExerciseData]()
     
@@ -64,15 +64,22 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
             let okBtn = UIAlertAction(title: "예", style: .default) { [weak self] _ in
                 // 다른 VC 가 나오며 운동총볼륨 + 운동시간이 나오도록 구현할것
                 if let timeLabelText = self?.totalTimeLabel.text {
-                       print("멈춰진 시간은? \(timeLabelText)")
+                    print("멈춰진 시간은? \(timeLabelText)")
                     guard let finishVC = self?.storyboard?.instantiateViewController(identifier: "FinishVC") as? FinishVC else {
                         return
                     }
                     
-                 /*
-                  셀에 총볼륨값에 접근해야함..
-                  */
-                    
+                    //⬇️테이블뷰셀에 있는 토탈값들의 합을 다 구해서 다음 뷰컨에넘겨줬음.
+                    if let tableView = self?.tableView {
+                        var totalVolume = 0
+                        for i in 0..<tableView.numberOfRows(inSection: 0) {
+                            if let cell = tableView.cellForRow(at: IndexPath(row: i, section: 0)) as? Cell {
+                                totalVolume += cell.volume
+                            }
+                        }
+                        finishVC.totalVolume = totalVolume
+                    }
+                    //⬆️
                     
                     finishVC.totalTime = timeLabelText
                     finishVC.modalPresentationStyle = .fullScreen
@@ -180,6 +187,7 @@ class Cell: UITableViewCell {
     @IBOutlet weak var checkBtn: UIButton!
     
     var delegate: CellDelegate?
+    var volume: Int = 0
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -204,6 +212,7 @@ class Cell: UITableViewCell {
         // 텍스트 필드의 값이 변경되었으므로, 각 텍스트 필드의 값을 사용하여 총 볼륨을 계산하고 업데이트합니다.
         // 여기에 무게단위만 적용하면 될듯? 일단 KG 로 라벨에 써놓자
         let totalVolume = calculateTotal()
+        self.volume = totalVolume//🧪
         DispatchQueue.main.async {
             self.volumeLabel.text = "총 볼륨: \(totalVolume) KG"
         }
@@ -329,9 +338,10 @@ class Cell: UITableViewCell {
 }
 
 extension ExerciseRecordVC: CellDelegate {
+    
     func removeCell(at index: Int) {
         exerciseArray.remove(at: index)
-        tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .automatic)//🧪
+        tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
         
         // 셀 삭제 후 남은 셀들의 라벨을 정리합니다.
         for i in index..<exerciseArray.count {
