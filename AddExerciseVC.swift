@@ -37,6 +37,7 @@ class AddExerciseVC: UIViewController {
         super.viewDidLoad()
         exerciseNameTextField.addTarget(self, action: #selector(textfieldDidChange(_ :)), for: .editingChanged)
         configure()
+        setupTapGestureToDismissKeyboard()
         
     }
     
@@ -187,5 +188,42 @@ class AddExerciseVC: UIViewController {
         }
     }
     
+    //MARK: - 키보드관련
+    override func viewWillAppear(_ animated: Bool) {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShowHandle(notification: )), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHideHandle(notification: )), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+        
+    }
+    
+    @objc private func keyboardWillShowHandle(notification: Notification) {
+        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+            print("현재 기기의 키보드 사이즈는 >> \(keyboardSize)")
+            print("추가하기 버튼의 위치는 >> \(self.addBtn.frame.origin.y)")
+            
+            if (keyboardSize.height < addBtn.frame.origin.y) {
+                let distance = keyboardSize.height - addBtn.frame.origin.y + 140
+                self.view.frame.origin.y = distance
+            }
+        }
+    }
+    
+    @objc private func keyboardWillHideHandle(notification: Notification) {
+        self.view.frame.origin.y = 0
+    }
+    
+    private func setupTapGestureToDismissKeyboard() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
 }
 

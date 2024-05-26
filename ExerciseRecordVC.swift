@@ -15,6 +15,8 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
         
         exerciseArray.append(exercise)
         tableView.insertRows(at: [indexPath], with: .automatic)
+        tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+       
         
     }
     
@@ -36,6 +38,7 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
         self.tableView.dataSource = self
         self.tableView.delegate = self
         configure()
+        setupTapGestureToDismissKeyboard()
         print("ExerciseRecordVC ViewDidLoad")
         
     }
@@ -71,19 +74,19 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
                     
                     //⬇️테이블뷰셀에 있는 토탈값들의 합을 다 구해서 다음 뷰컨에넘겨줬음.
                     if let tableView = self?.tableView {
-                        var totalVolume = 0
+                        var totalVolume: Double = 0
                         for i in 0..<tableView.numberOfRows(inSection: 0) {
                             if let cell = tableView.cellForRow(at: IndexPath(row: i, section: 0)) as? Cell {
-                                totalVolume += cell.volume
+                                totalVolume += (cell.volume)
                             }
                         }
-                        finishVC.totalVolume = totalVolume
+                        finishVC.totalVolume = Double(totalVolume)
                     }
                     //⬆️
                     
                     finishVC.totalTime = timeLabelText
                     finishVC.modalPresentationStyle = .fullScreen
-                    finishVC.modalTransitionStyle = .partialCurl
+                    finishVC.modalTransitionStyle = .flipHorizontal
                     self?.present(finishVC, animated: true)
                    } else {
                        print("멈춰진 시간을 가져올 수 없습니다.")
@@ -161,6 +164,53 @@ extension ExerciseRecordVC: UITableViewDataSource , UITableViewDelegate {
         return UITableView.automaticDimension
     }
     
+    //MARK: - 키보드관련
+    
+    override func viewWillAppear(_ animated: Bool) {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShowHandle(notification: )), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHideHandle(notification: )), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+        
+    }
+    
+    @objc private func keyboardWillShowHandle(notification: Notification) {
+        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+            print("현재 기기의 키보드 사이즈는 >> \(keyboardSize)")
+            
+            let keyboardHeight = keyboardSize.height
+                   
+                   let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: keyboardHeight, right: 0)
+                   tableView.contentInset = contentInsets
+                   tableView.scrollIndicatorInsets = contentInsets
+                   
+                   // 선택된 셀로 스크롤
+                   if let indexPath = tableView.indexPathForSelectedRow {
+                       tableView.scrollToRow(at: indexPath, at: .middle, animated: true)
+                   }
+
+        }
+    }
+    
+    @objc private func keyboardWillHideHandle(notification: Notification) {
+        let contentInsets = UIEdgeInsets.zero
+           tableView.contentInset = contentInsets
+           tableView.scrollIndicatorInsets = contentInsets
+    }
+    
+    private func setupTapGestureToDismissKeyboard() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
 }
 
 //MARK: - Cell 클래스
@@ -187,7 +237,7 @@ class Cell: UITableViewCell {
     @IBOutlet weak var checkBtn: UIButton!
     
     var delegate: CellDelegate?
-    var volume: Int = 0
+    var volume: Double = 0.0
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -212,29 +262,29 @@ class Cell: UITableViewCell {
         // 텍스트 필드의 값이 변경되었으므로, 각 텍스트 필드의 값을 사용하여 총 볼륨을 계산하고 업데이트합니다.
         // 여기에 무게단위만 적용하면 될듯? 일단 KG 로 라벨에 써놓자
         let totalVolume = calculateTotal()
-        self.volume = totalVolume//🧪
+        self.volume = Double(totalVolume)
         DispatchQueue.main.async {
             self.volumeLabel.text = "총 볼륨: \(totalVolume) KG"
         }
         print("총 볼륨: \(totalVolume)")
     }
     
-    func calculateTotal() -> Int {
-        var total = 0
+    func calculateTotal() -> Double {
+        var total: Double = 0.0
         for horizontalStackView in horizontalStackViews {
             guard let weightTextField = horizontalStackView.subviews.first(where: { $0 is UITextField && $0.tag % 2 == 0 }) as? UITextField,
                   let weightText = weightTextField.text,
-                  let weight = Int(weightText),
+                  let weight = Double(weightText),
                   let countTextField = horizontalStackView.subviews.first(where: { $0 is UITextField && $0.tag % 2 == 1 }) as? UITextField,
                   let countText = countTextField.text,
                   let count = Int(countText) else {
                 continue
             }
             // 각 텍스트 필드의 값과 인덱스를 곱하여 총합을 계산합니다.
-            total += weight * count
+            total += weight * Double(count)
         }
         
-        return total
+        return Double(total)
     }
     
     private func updateTotalVolume() {
@@ -287,6 +337,7 @@ class Cell: UITableViewCell {
         weightTextField.backgroundColor = .white
         weightTextField.layer.cornerRadius = 5
         weightTextField.tag = horizontalStackViews.endIndex * 2
+        weightTextField.keyboardType = .decimalPad
         
         let weightLabel = UILabel()
         weightLabel.text = "KG"
@@ -296,6 +347,7 @@ class Cell: UITableViewCell {
         countTextField.backgroundColor = .white
         countTextField.layer.cornerRadius = 5
         countTextField.tag = (horizontalStackViews.endIndex * 2) + 1
+        countTextField.keyboardType = .numberPad
         
         let countLabel = UILabel()
         countLabel.text = "회"
@@ -335,6 +387,7 @@ class Cell: UITableViewCell {
         tableView.endUpdates()
     }
     
+    
 }
 
 extension ExerciseRecordVC: CellDelegate {
@@ -360,10 +413,4 @@ extension ExerciseRecordVC: CellDelegate {
 }
 
 
-/*
- 현재 상황  5월21일
- 해야할일:
- 1. 운동시간을 finishVC 에 넘기기 [v]
- 2. 총볼륨값을 구해서 finishVC 에 넘기기 (알럿나오는 부분 가서 마저 구현할것)
- 
- */
+
