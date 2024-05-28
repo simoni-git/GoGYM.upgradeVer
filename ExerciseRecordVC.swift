@@ -63,7 +63,7 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
             timer?.invalidate()
             timer = nil
            
-            let alert = UIAlertController(title: "운동을 종료하시겠습니까?", message: nil, preferredStyle: .alert)
+            let alert = UIAlertController(title: "운동을 종료하시겠습니까?", message: "종료시 수정이 불가능 합니다.", preferredStyle: .alert)
             let okBtn = UIAlertAction(title: "예", style: .default) { [weak self] _ in
                 // 다른 VC 가 나오며 운동총볼륨 + 운동시간이 나오도록 구현할것
                 if let timeLabelText = self?.totalTimeLabel.text {

@@ -84,15 +84,8 @@ class FinishVC: UIViewController {
          
             
             NotificationCenter.default.post(name: NSNotification.Name("DismissAndGoToHome"), object: nil)
+            NotificationCenter.default.post(name: NSNotification.Name("updateRecord"), object: nil)
             self.dismiss(animated: true)
-            
-            //코어데이터에 저장하고 모든 네비게이션스택 초기화후 첫화면으로 이동하기,
-            // 저장할 내용들>> 운동시간String , 토탈볼륨Int , 날짜 String
-            
-            
-            
-            //여기까지가 시간,볼륨,날짜 를 저장한거임
-            // 그다음엔..
             
             
         }
