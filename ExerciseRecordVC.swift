@@ -7,7 +7,11 @@
 
 import UIKit
 
-class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
+class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtocol {
+    func sendRestTime(restTime: Int) {
+       self.remainingTime = restTime
+    }
+    
     func sendData(exerciseName: String, category: String, unit: String) {
         print("넘어온 값들은 \(exerciseName) , \(category) , \(unit) 입니다.")
         let indexPath = IndexPath(row: exerciseArray.count, section: 0)//🧪
@@ -17,7 +21,6 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
         tableView.insertRows(at: [indexPath], with: .automatic)
         tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
        
-        
     }
     
     @IBOutlet weak var addExerciseBtn: UIBarButtonItem!
@@ -28,9 +31,9 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
     @IBOutlet weak var restTimeBtn: UIButton!
     
     var timer: Timer?
-    var seconds: Int = 0
-
-    
+    var restTimer: Timer?
+    var ExerciseTime: Int = 0
+    var remainingTime: Int = 90
     var exerciseArray = [ExerciseData]()
     
     override func viewDidLoad() {
@@ -46,8 +49,10 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
     func configure() {
         subView.layer.cornerRadius = 10
         startAndFinishBtn.layer.cornerRadius = 10
+        
     }
     
+    //MARK: - 운동추가버튼 , 휴식타이머편집버튼 , 운동시작버튼
     @IBAction func tapAddExerciseBtn(_ sender: UIBarButtonItem) {
         print("ExerciseRecordVC - tapAddExerciseBtn()")
         guard let vc = storyboard?.instantiateViewController(withIdentifier: "AddExerciseVC") as? AddExerciseVC else { return }
@@ -91,7 +96,7 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
                    } else {
                        print("멈춰진 시간을 가져올 수 없습니다.")
                    }
-                self?.seconds = 0 // 0으로 만들기 전에 해당 시간정보를 다음뷰에 넘긴 후 0으로 만들어야함.
+                self?.ExerciseTime = 0 // 0으로 만들기 전에 해당 시간정보를 다음뷰에 넘긴 후 0으로 만들어야함.
                
             }
             let cancelBtn = UIAlertAction(title: "아니오", style: .cancel) { [weak self] _ in
@@ -109,7 +114,7 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
             self.addExerciseBtn.isHidden = false
             self.startAndFinishBtn.setTitle("운동종료", for: .normal)
             timer?.invalidate() // 진행되는 타이머가 있다면 초기화
-            seconds = 0
+            ExerciseTime = 0
             updateLabel()
             timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
             
@@ -118,19 +123,28 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol {
     }
     
     @objc func updateTimer() {
-           seconds += 1
+        ExerciseTime += 1
            updateLabel()
        }
        
        func updateLabel() {
-           let hours = seconds / 3600
-           let minutes = (seconds % 3600) / 60
-           let secs = seconds % 60
+           let hours = ExerciseTime / 3600
+           let minutes = (ExerciseTime % 3600) / 60
+           let secs = ExerciseTime % 60
            DispatchQueue.main.async {
                self.totalTimeLabel.text = "\(hours)시간\(minutes)분\(secs)초"
            }
           
        }
+    
+    @IBAction func tapRestTimeBtn(_ sender: UIButton) {
+        //휴식타이머의 시간을 조절할 수 있게끔 구현
+        guard let restTimerEditVC = storyboard?.instantiateViewController(withIdentifier: "RestTimerEditVC") as? RestTimerEditVC else { return }
+        restTimerEditVC.delegate = self
+        present(restTimerEditVC, animated: true)
+        
+    }
+  //MARK: - 
     
     struct ExerciseData {
         var exerciseName: String
@@ -216,6 +230,7 @@ extension ExerciseRecordVC: UITableViewDataSource , UITableViewDelegate {
 //MARK: - Cell 클래스
 protocol CellDelegate {
     func removeCell(at index: Int)
+    func restTimeUpdate()
 }
 class Cell: UITableViewCell {
     
@@ -256,6 +271,7 @@ class Cell: UITableViewCell {
         
         // 스택뷰의 높이 제약을 초기화합니다.
         verticalStackViewHeightConst.constant = 0
+        
     }
     
     @objc func textFieldDidChange(_ textField: UITextField) {
@@ -297,8 +313,17 @@ class Cell: UITableViewCell {
     }
     
     @IBAction func tapCheckBtn(_ sender: UIButton) {
-        // 체크가 되면 휴식타이머가 돌아감
+       // 각 셀의 체크버튼 클릭시 쉬는시간타이머 구현 [v]
+        print("체크버튼 눌림")
+           if sender.backgroundColor == .white {
+               sender.backgroundColor = .gray
+               delegate?.restTimeUpdate()
+           } else {
+               sender.backgroundColor = .white
+           }
+        
     }
+    
     
     @IBAction func tapCellRemoveBtn(_ sender: UIButton) {
         print("ExerciseRecordVC - tapCellRemoveBtn()")
@@ -353,8 +378,11 @@ class Cell: UITableViewCell {
         countLabel.text = "회"
         
         let checkBtn = UIButton(type: .custom)
-        checkBtn.setImage( .checkmark , for: .normal)
-        checkBtn.backgroundColor = .systemGray
+        if let checkmarkImage = UIImage(systemName: "checkmark") {
+            checkBtn.setImage(checkmarkImage, for: .normal)
+        }
+        checkBtn.backgroundColor = .white
+        checkBtn.tag = horizontalStackViews.endIndex
         
         horizontalStackView.addArrangedSubview(setLabel)
         horizontalStackView.addArrangedSubview(weightTextField)
@@ -365,6 +393,7 @@ class Cell: UITableViewCell {
         
         weightTextField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         countTextField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
+        checkBtn.addTarget(self, action: #selector(tapCheckBtn(_:)), for: .touchUpInside)
         
         verticalStackViewHeightConst.constant += 20
         verticalStackView.addArrangedSubview(horizontalStackView)
@@ -391,6 +420,47 @@ class Cell: UITableViewCell {
 }
 
 extension ExerciseRecordVC: CellDelegate {
+    func restTimeUpdate() {
+        restTimer?.invalidate()
+        // 남은 시간을 초기화
+        remainingTime = 90
+        
+        // 1초마다 타이머 이벤트 발생
+        restTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateRestTimer), userInfo: nil, repeats: true)
+        
+        // 즉시 타이머 업데이트 실행
+        updateRestTimer()
+        
+    }
+    
+    @objc func updateRestTimer() {
+           // 남은 시간을 줄임
+        remainingTime -= 1
+       
+        DispatchQueue.main.async {
+            self.restTimeBtn.setTitle("남은휴식 \(self.remainingTime) 초", for: .normal)
+              }
+           
+           // 남은 시간이 0초 이하이면 타이머를 무효화하고 완료 핸들러 호출
+        if remainingTime <= 0 {
+               restTimer?.invalidate()
+               timerDidFinish()
+           }
+        
+       
+       }
+       
+       @objc func timerDidFinish() {
+           // 타이머 완료시 수행할 작업
+           print("타이머가 완료되었습니다.")
+           // 뷰컨트롤러에 있는 restTimeBtn 의
+           DispatchQueue.main.async {
+               self.restTimeBtn.setTitle("휴식종료", for: .normal)
+           }
+    
+       }
+    
+    
     
     func removeCell(at index: Int) {
         exerciseArray.remove(at: index)
