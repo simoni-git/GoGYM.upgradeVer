@@ -19,19 +19,18 @@ class FinishVC: UIViewController {
     
     @IBOutlet weak var totalTimeLabel: UILabel!
     @IBOutlet weak var totalVolumeLabel: UILabel!
+    @IBOutlet weak var memoTextView: UITextView!
     @IBOutlet weak var saveBtn: UIButton!
+    
     var totalTime: String = ""
     var totalVolume: Double = 0
-    var today: String = "" {
-        didSet {
-            print("오늘 날짜가 뭐임?? \(today)")
-        }
-    }
+    var today: String = ""
+    var memo: String = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
-        
+        setupTapGestureToDismissKeyboard()
         
     }
     
@@ -40,6 +39,12 @@ class FinishVC: UIViewController {
         totalTimeLabel.text = "총 운동시간: \(totalTime)"
         totalVolumeLabel.text = "총 볼륨: \(totalVolume)"
         todayDate()
+        memoTextView.delegate = self
+        memoTextView.text = "오늘 운동에 대해 메모할 수 있어요!"
+        memoTextView.textColor = UIColor.lightGray
+        memoTextView.layer.borderWidth = 1.0
+        memoTextView.layer.borderColor = UIColor.black.cgColor
+        memoTextView.layer.cornerRadius = 10
     }
     
     private func todayDate() {
@@ -57,11 +62,17 @@ class FinishVC: UIViewController {
         let time = self.totalTime
         let volume = self.totalVolume
         let date = today
-        
+        if memoTextView.text == "오늘 운동에 대해 메모할 수 있어요!" || memoTextView.text == nil {
+            self.memo = "입력한 메모가 없습니다."
+        } else {
+            self.memo = memoTextView.text
+        }
+        let memo = self.memo
         let newEntity = NSEntityDescription.insertNewObject(forEntityName: "ExerciseModel", into: context)
         newEntity.setValue(time, forKey: "time")
         newEntity.setValue(volume, forKey: "volume")
         newEntity.setValue(date, forKey: "date")
+        newEntity.setValue(memo, forKey: "memo")
         
         if context.hasChanges {
             do {
@@ -81,15 +92,39 @@ class FinishVC: UIViewController {
             } catch let error as NSError {
                 print("데이터를 저장하는 데 실패했습니다. \(error), \(error.userInfo)")
             }
-         
             
             NotificationCenter.default.post(name: NSNotification.Name("DismissAndGoToHome"), object: nil)
             NotificationCenter.default.post(name: NSNotification.Name("updateRecord"), object: nil)
             self.dismiss(animated: true)
-            
-            
         }
-        
-        
     }
+    
+    //MARK: - 키보드관련
+    private func setupTapGestureToDismissKeyboard() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
+}
+
+extension FinishVC: UITextViewDelegate {
+    func textViewDidEndEditing(_ textView: UITextView) {
+        if memoTextView.text.isEmpty {
+            memoTextView.text = "오늘 운동에 대해 메모할 수 있어요!"
+            memoTextView.textColor = UIColor.lightGray
+        }
+    }
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if memoTextView.textColor == UIColor.lightGray {
+            memoTextView.text = nil
+            memoTextView.textColor = UIColor.black
+        }
+    }
+    
 }

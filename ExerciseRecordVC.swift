@@ -9,18 +9,17 @@ import UIKit
 
 class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtocol {
     func sendRestTime(restTime: Int) {
-       self.remainingTime = restTime
+        self.editRemainingTime = restTime
     }
     
     func sendData(exerciseName: String, category: String, unit: String) {
         print("넘어온 값들은 \(exerciseName) , \(category) , \(unit) 입니다.")
-        let indexPath = IndexPath(row: exerciseArray.count, section: 0)//🧪
+        let indexPath = IndexPath(row: exerciseArray.count, section: 0)
         let exercise = ExerciseData(exerciseName: exerciseName, category: category, unit: unit)
         
         exerciseArray.append(exercise)
         tableView.insertRows(at: [indexPath], with: .automatic)
         tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
-       
     }
     
     @IBOutlet weak var addExerciseBtn: UIBarButtonItem!
@@ -34,22 +33,21 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
     var restTimer: Timer?
     var ExerciseTime: Int = 0
     var remainingTime: Int = 90
+    var editRemainingTime: Int = 90
     var exerciseArray = [ExerciseData]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("ExerciseRecordVC ViewDidLoad")
         self.tableView.dataSource = self
         self.tableView.delegate = self
         configure()
         setupTapGestureToDismissKeyboard()
-        print("ExerciseRecordVC ViewDidLoad")
-        
     }
     
     func configure() {
         subView.layer.cornerRadius = 10
         startAndFinishBtn.layer.cornerRadius = 10
-        
     }
     
     //MARK: - 운동추가버튼 , 휴식타이머편집버튼 , 운동시작버튼
@@ -58,7 +56,6 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
         guard let vc = storyboard?.instantiateViewController(withIdentifier: "AddExerciseVC") as? AddExerciseVC else { return }
         vc.delegate = self
         present(vc, animated: true)
-        
     }
     
     @IBAction func tapStartFinishBtn(_ sender: UIButton) {
@@ -67,7 +64,7 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
             print(" 라벨이 운동종료 일 떄 눌렸다")
             timer?.invalidate()
             timer = nil
-           
+            
             let alert = UIAlertController(title: "운동을 종료하시겠습니까?", message: "종료시 수정이 불가능 합니다.", preferredStyle: .alert)
             let okBtn = UIAlertAction(title: "예", style: .default) { [weak self] _ in
                 // 다른 VC 가 나오며 운동총볼륨 + 운동시간이 나오도록 구현할것
@@ -93,11 +90,11 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
                     finishVC.modalPresentationStyle = .fullScreen
                     finishVC.modalTransitionStyle = .flipHorizontal
                     self?.present(finishVC, animated: true)
-                   } else {
-                       print("멈춰진 시간을 가져올 수 없습니다.")
-                   }
+                } else {
+                    print("멈춰진 시간을 가져올 수 없습니다.")
+                }
                 self?.ExerciseTime = 0 // 0으로 만들기 전에 해당 시간정보를 다음뷰에 넘긴 후 0으로 만들어야함.
-               
+                
             }
             let cancelBtn = UIAlertAction(title: "아니오", style: .cancel) { [weak self] _ in
                 if let self = self {
@@ -117,34 +114,31 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
             ExerciseTime = 0
             updateLabel()
             timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateTimer), userInfo: nil, repeats: true)
-            
         }
-        
     }
     
     @objc func updateTimer() {
         ExerciseTime += 1
-           updateLabel()
-       }
-       
-       func updateLabel() {
-           let hours = ExerciseTime / 3600
-           let minutes = (ExerciseTime % 3600) / 60
-           let secs = ExerciseTime % 60
-           DispatchQueue.main.async {
-               self.totalTimeLabel.text = "\(hours)시간\(minutes)분\(secs)초"
-           }
-          
-       }
+        updateLabel()
+    }
+    
+    func updateLabel() {
+        let hours = ExerciseTime / 3600
+        let minutes = (ExerciseTime % 3600) / 60
+        let secs = ExerciseTime % 60
+        DispatchQueue.main.async {
+            self.totalTimeLabel.text = "\(hours)시간\(minutes)분\(secs)초"
+        }
+    }
     
     @IBAction func tapRestTimeBtn(_ sender: UIButton) {
         //휴식타이머의 시간을 조절할 수 있게끔 구현
         guard let restTimerEditVC = storyboard?.instantiateViewController(withIdentifier: "RestTimerEditVC") as? RestTimerEditVC else { return }
         restTimerEditVC.delegate = self
+        restTimerEditVC.remainingTime = self.editRemainingTime
         present(restTimerEditVC, animated: true)
-        
     }
-  //MARK: - 
+    //MARK: -
     
     struct ExerciseData {
         var exerciseName: String
@@ -188,7 +182,6 @@ extension ExerciseRecordVC: UITableViewDataSource , UITableViewDelegate {
     override func viewWillDisappear(_ animated: Bool) {
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-        
     }
     
     @objc private func keyboardWillShowHandle(notification: Notification) {
@@ -196,23 +189,22 @@ extension ExerciseRecordVC: UITableViewDataSource , UITableViewDelegate {
             print("현재 기기의 키보드 사이즈는 >> \(keyboardSize)")
             
             let keyboardHeight = keyboardSize.height
-                   
-                   let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: keyboardHeight, right: 0)
-                   tableView.contentInset = contentInsets
-                   tableView.scrollIndicatorInsets = contentInsets
-                   
-                   // 선택된 셀로 스크롤
-                   if let indexPath = tableView.indexPathForSelectedRow {
-                       tableView.scrollToRow(at: indexPath, at: .middle, animated: true)
-                   }
-
+            
+            let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: keyboardHeight, right: 0)
+            tableView.contentInset = contentInsets
+            tableView.scrollIndicatorInsets = contentInsets
+            
+            // 선택된 셀로 스크롤
+            if let indexPath = tableView.indexPathForSelectedRow {
+                tableView.scrollToRow(at: indexPath, at: .middle, animated: true)
+            }
         }
     }
     
     @objc private func keyboardWillHideHandle(notification: Notification) {
         let contentInsets = UIEdgeInsets.zero
-           tableView.contentInset = contentInsets
-           tableView.scrollIndicatorInsets = contentInsets
+        tableView.contentInset = contentInsets
+        tableView.scrollIndicatorInsets = contentInsets
     }
     
     private func setupTapGestureToDismissKeyboard() {
@@ -220,7 +212,7 @@ extension ExerciseRecordVC: UITableViewDataSource , UITableViewDelegate {
         tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
     }
-
+    
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
@@ -257,7 +249,7 @@ class Cell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
     }
-  
+    
     override func prepareForReuse() {
         
         // horizontalStackViews 배열을 초기화하여 스택뷰들을 제거합니다.
@@ -299,7 +291,6 @@ class Cell: UITableViewCell {
             // 각 텍스트 필드의 값과 인덱스를 곱하여 총합을 계산합니다.
             total += weight * Double(count)
         }
-        
         return Double(total)
     }
     
@@ -313,15 +304,14 @@ class Cell: UITableViewCell {
     }
     
     @IBAction func tapCheckBtn(_ sender: UIButton) {
-       // 각 셀의 체크버튼 클릭시 쉬는시간타이머 구현 [v]
+        // 각 셀의 체크버튼 클릭시 쉬는시간타이머 구현 [v]
         print("체크버튼 눌림")
-           if sender.backgroundColor == .white {
-               sender.backgroundColor = .gray
-               delegate?.restTimeUpdate()
-           } else {
-               sender.backgroundColor = .white
-           }
-        
+        if sender.backgroundColor == .white {
+            sender.backgroundColor = .gray
+            delegate?.restTimeUpdate()
+        } else {
+            sender.backgroundColor = .white
+        }
     }
     
     
@@ -332,7 +322,6 @@ class Cell: UITableViewCell {
             return
         }
         delegate?.removeCell(at: indexPath.row)
-        
     }
     
     @IBAction func tapDeleteSetBtn(_ sender: UIButton) {
@@ -416,49 +405,48 @@ class Cell: UITableViewCell {
         tableView.endUpdates()
     }
     
-    
 }
 
 extension ExerciseRecordVC: CellDelegate {
     func restTimeUpdate() {
         restTimer?.invalidate()
-        // 남은 시간을 초기화
-        remainingTime = 90
+        //편집된 시간으로 휴식시간 교체, 편집된게 없다면 기본값90
+        toggleRestTime()
         
         // 1초마다 타이머 이벤트 발생
         restTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateRestTimer), userInfo: nil, repeats: true)
         
         // 즉시 타이머 업데이트 실행
         updateRestTimer()
-        
     }
     
     @objc func updateRestTimer() {
-           // 남은 시간을 줄임
+        // 남은 시간을 줄임
         remainingTime -= 1
-       
+        
         DispatchQueue.main.async {
             self.restTimeBtn.setTitle("남은휴식 \(self.remainingTime) 초", for: .normal)
-              }
-           
-           // 남은 시간이 0초 이하이면 타이머를 무효화하고 완료 핸들러 호출
-        if remainingTime <= 0 {
-               restTimer?.invalidate()
-               timerDidFinish()
-           }
+        }
         
-       
-       }
-       
-       @objc func timerDidFinish() {
-           // 타이머 완료시 수행할 작업
-           print("타이머가 완료되었습니다.")
-           // 뷰컨트롤러에 있는 restTimeBtn 의
-           DispatchQueue.main.async {
-               self.restTimeBtn.setTitle("휴식종료", for: .normal)
-           }
+        // 남은 시간이 0초 이하이면 타이머를 무효화하고 완료 핸들러 호출
+        if remainingTime <= 0 {
+            restTimer?.invalidate()
+            timerDidFinish()
+        }
+    }
     
-       }
+    @objc func timerDidFinish() {
+        // 타이머 완료시 수행할 작업
+        print("타이머가 완료되었습니다.")
+        // 뷰컨트롤러에 있는 restTimeBtn 의
+        DispatchQueue.main.async {
+            self.restTimeBtn.setTitle("휴식종료", for: .normal)
+        }
+    }
+    
+    func toggleRestTime() {
+        self.remainingTime = self.editRemainingTime
+    }
     
     
     

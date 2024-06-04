@@ -13,12 +13,13 @@ protocol RestTimeProtocol {
 
 class RestTimerEditVC: UIViewController {
     
+    @IBOutlet weak var mentLabel: UILabel!
     @IBOutlet weak var restTimeLabel: UILabel!
     @IBOutlet weak var minusTimeBtn: UIButton!
     @IBOutlet weak var plusTimeBtn: UIButton!
     @IBOutlet weak var okBtn: UIButton!
-
-    var remainingTime: Int = 90
+    
+    var remainingTime: Int = 0
     var delegate: RestTimeProtocol?
     
     override func viewDidLoad() {
@@ -28,6 +29,7 @@ class RestTimerEditVC: UIViewController {
     }
     
     private func configure() {
+        mentLabel.text = "현재 휴식시간은 \(remainingTime)초 입니다. 원하시는 휴식시간이 있나요?"
         restTimeLabel.text = "\(remainingTime)"
         minusTimeBtn.layer.cornerRadius = 10
         plusTimeBtn.layer.cornerRadius = 10
@@ -44,7 +46,6 @@ class RestTimerEditVC: UIViewController {
         }
     }
     
-    
     @IBAction func tapPlusTimeBtn(_ sender: UIButton) {
         print("RestTimeEditVC - tapPlusTimeBtn called")
         var editTime = (self.remainingTime) + 10
@@ -53,7 +54,6 @@ class RestTimerEditVC: UIViewController {
         DispatchQueue.main.async {
             self.restTimeLabel.text = "\(self.remainingTime)"
         }
-        
     }
     
     @IBAction func tapOkBtn(_ sender: UIButton) {
@@ -61,7 +61,5 @@ class RestTimerEditVC: UIViewController {
         delegate?.sendRestTime(restTime: self.remainingTime)
         dismiss(animated: true)
     }
-    
-    
     
 }
