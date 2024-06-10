@@ -32,7 +32,11 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
     var timer: Timer?
     var restTimer: Timer?
     var ExerciseTime: Int = 0
-    var remainingTime: Int = 90
+    var remainingTime: Int = 90 {
+        didSet {
+            print("remainingTime 값이 바뀌었다. >> \(remainingTime)")
+        }
+    }
     var editRemainingTime: Int = 90
     var exerciseArray = [ExerciseData]()
     
@@ -223,6 +227,7 @@ extension ExerciseRecordVC: UITableViewDataSource , UITableViewDelegate {
 protocol CellDelegate {
     func removeCell(at index: Int)
     func restTimeUpdate()
+    func presentModalVC()
 }
 class Cell: UITableViewCell {
     
@@ -304,11 +309,12 @@ class Cell: UITableViewCell {
     }
     
     @IBAction func tapCheckBtn(_ sender: UIButton) {
-        // 각 셀의 체크버튼 클릭시 쉬는시간타이머 구현 [v]
         print("체크버튼 눌림")
         if sender.backgroundColor == .white {
             sender.backgroundColor = .gray
             delegate?.restTimeUpdate()
+            delegate?.presentModalVC()//🧪
+            
         } else {
             sender.backgroundColor = .white
         }
@@ -408,6 +414,14 @@ class Cell: UITableViewCell {
 }
 
 extension ExerciseRecordVC: CellDelegate {
+    func presentModalVC() { //🧪
+        guard let modalVC = self.storyboard?.instantiateViewController(withIdentifier: "RestTimeModalVC") as? RestTimeModalVC else { return }
+        modalVC.modalPresentationStyle = .fullScreen
+        // modalVC 에 변수하나 만들어서 타이머 돌아갈거 전달해주자
+        modalVC.restTime = self.remainingTime //🧪
+        present(modalVC, animated: true)
+    }
+    
     func restTimeUpdate() {
         restTimer?.invalidate()
         //편집된 시간으로 휴식시간 교체, 편집된게 없다면 기본값90
@@ -469,6 +483,4 @@ extension ExerciseRecordVC: CellDelegate {
     }
     
 }
-
-
 
