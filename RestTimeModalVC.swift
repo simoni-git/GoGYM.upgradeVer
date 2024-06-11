@@ -7,11 +7,15 @@
 
 import UIKit
 
+protocol RestTimeModalDelegate {
+    func updateRestTimeForModal(restTime: Int)
+}
 
 class RestTimeModalVC: UIViewController {
     
+    
+    @IBOutlet weak var modalView: UIView!
     @IBOutlet weak var currentRestTimeLabel: UILabel!
-    @IBOutlet weak var restTimeLabel: UILabel!
     @IBOutlet weak var minus10Btn: UIButton!
     @IBOutlet weak var plus10Btn: UIButton!
     @IBOutlet weak var optionBtn: UIButton!
@@ -19,12 +23,22 @@ class RestTimeModalVC: UIViewController {
     
     var restTime: Int?
     var timer: Timer?
+    var delegate: RestTimeModalDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        configure()
         startTimer()
 
         
+    }
+    
+    private func configure() {
+        modalView.layer.cornerRadius = 10
+        minus10Btn.layer.cornerRadius = 10
+        plus10Btn.layer.cornerRadius = 10
+        optionBtn.layer.cornerRadius = 10
+        clossBtn.layer.cornerRadius = 10
     }
     
     @IBAction func tapMinus10Btn(_ sender: UIButton) {
@@ -50,7 +64,7 @@ class RestTimeModalVC: UIViewController {
     @IBAction func tapClossBtn(_ sender: UIButton) {
        
         guard let exerciseRecordVC = self.storyboard?.instantiateViewController(identifier: "ExerciseRecordVC") as? ExerciseRecordVC else { return }
-        exerciseRecordVC.remainingTime = self.restTime!
+        delegate?.updateRestTimeForModal(restTime: self.restTime!)
         
         dismiss(animated: true)
     }

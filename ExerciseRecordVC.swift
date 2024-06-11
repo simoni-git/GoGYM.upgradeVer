@@ -313,7 +313,8 @@ class Cell: UITableViewCell {
         if sender.backgroundColor == .white {
             sender.backgroundColor = .gray
             delegate?.restTimeUpdate()
-            delegate?.presentModalVC()//🧪
+            delegate?.presentModalVC()
+            
             
         } else {
             sender.backgroundColor = .white
@@ -413,12 +414,13 @@ class Cell: UITableViewCell {
     
 }
 
+//MARK: - Cell 과 관련된 Delegate
 extension ExerciseRecordVC: CellDelegate {
     func presentModalVC() { //🧪
         guard let modalVC = self.storyboard?.instantiateViewController(withIdentifier: "RestTimeModalVC") as? RestTimeModalVC else { return }
-        modalVC.modalPresentationStyle = .fullScreen
-        // modalVC 에 변수하나 만들어서 타이머 돌아갈거 전달해주자
-        modalVC.restTime = self.remainingTime //🧪
+        modalVC.modalPresentationStyle = .overCurrentContext
+        modalVC.restTime = self.remainingTime
+        modalVC.delegate = self
         present(modalVC, animated: true)
     }
     
@@ -462,8 +464,6 @@ extension ExerciseRecordVC: CellDelegate {
         self.remainingTime = self.editRemainingTime
     }
     
-    
-    
     func removeCell(at index: Int) {
         exerciseArray.remove(at: index)
         tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
@@ -484,3 +484,23 @@ extension ExerciseRecordVC: CellDelegate {
     
 }
 
+// MARK: - RestTimeModalVC 에 대한 Delegate
+extension ExerciseRecordVC: RestTimeModalDelegate {
+    func updateRestTimeForModal(restTime: Int) {
+        self.remainingTime = restTime
+        restTimeUpdateForModal()
+    }
+    
+    func restTimeUpdateForModal() {
+        restTimer?.invalidate()
+        
+        // 1초마다 타이머 이벤트 발생
+        restTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateRestTimer), userInfo: nil, repeats: true)
+        
+        // 즉시 타이머 업데이트 실행
+        updateRestTimer()
+    }
+    
+    
+    
+}
