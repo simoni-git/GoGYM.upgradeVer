@@ -49,10 +49,28 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
         setupTapGestureToDismissKeyboard()
     }
     
+    
     func configure() {
         subView.layer.cornerRadius = 10
         startAndFinishBtn.layer.cornerRadius = 10
     }
+    
+    //MARK: - 네비게이션뷰 커스텀back 버튼 기능부분
+    func showAlert() {
+        let alert = UIAlertController(title: "홈으로", message: "나가실 경우 데이터가 저장되지 않습니다. 그래도 나가시겠습니까?", preferredStyle: .alert)
+        let okBtn = UIAlertAction(title: "나가기", style: .default) { action in
+            self.navigationController?.popViewController(animated: true)
+        }
+        let cancelBtn = UIAlertAction(title: "취소", style: .cancel, handler: nil)
+        alert.addAction(okBtn)
+        alert.addAction(cancelBtn)
+        self.present(alert, animated: true)
+    }
+    
+    @objc func backButtonTapped() {
+            showAlert()
+        }
+    
     
     //MARK: - 운동추가버튼 , 휴식타이머편집버튼 , 운동시작버튼
     @IBAction func tapAddExerciseBtn(_ sender: UIBarButtonItem) {
@@ -142,8 +160,8 @@ class ExerciseRecordVC: UIViewController, ExerciseDataProtocol , RestTimeProtoco
         restTimerEditVC.remainingTime = self.editRemainingTime
         present(restTimerEditVC, animated: true)
     }
-    //MARK: -
     
+    //MARK: -
     struct ExerciseData {
         var exerciseName: String
         var category: String
@@ -181,11 +199,18 @@ extension ExerciseRecordVC: UITableViewDataSource , UITableViewDelegate {
     override func viewWillAppear(_ animated: Bool) {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShowHandle(notification: )), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHideHandle(notification: )), name: UIResponder.keyboardWillHideNotification, object: nil)
+        let backButton = UIBarButtonItem(title: "Back", style: .plain, target: self, action: #selector(backButtonTapped))
+               self.navigationItem.leftBarButtonItem = backButton
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+        // 하고싶은것: back버튼 눌러서 homevc 갈때 알럿 뜨게하고싶음.
+        //문제점: back을 통해서 첫화면으로 가게되던 finishvc에 가게되던 울리게됨.
+        //이렇게되면 finish에 갈때 알럿이 떠버리면 꼬이게되버림
+        // 이걸 해결하려면 다음 뷰의 인스턴스가 Homevc 일때만 뜨게하면됨.
+       
     }
     
     @objc private func keyboardWillShowHandle(notification: Notification) {
@@ -314,8 +339,6 @@ class Cell: UITableViewCell {
             sender.backgroundColor = .gray
             delegate?.restTimeUpdate()
             delegate?.presentModalVC()
-            
-            
         } else {
             sender.backgroundColor = .white
         }
@@ -501,6 +524,6 @@ extension ExerciseRecordVC: RestTimeModalDelegate {
         updateRestTimer()
     }
     
-    
-    
 }
+
+
