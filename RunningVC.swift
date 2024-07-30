@@ -30,12 +30,14 @@ class RunningVC: UIViewController {
     
     
     lazy var locationManager: CLLocationManager = {
-           let manager = CLLocationManager()
-           manager.desiredAccuracy = kCLLocationAccuracyBest
-           manager.startUpdatingLocation()
-           manager.delegate = self
-           return manager
-        }()
+        let manager = CLLocationManager()
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.startUpdatingLocation()
+        manager.delegate = self
+        manager.allowsBackgroundLocationUpdates = true // 백그라운드 위치 업데이트 허용
+        manager.pausesLocationUpdatesAutomatically = false // 위치 업데이트 자동 일시 중지 비활성화
+        return manager
+    }()
     var previousCoordinate: CLLocationCoordinate2D?
     
     override func viewDidLoad() {
@@ -113,44 +115,44 @@ class RunningVC: UIViewController {
 
 extension RunningVC: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-
-           guard let location = locations.last
-           else {return}
-           let latitude = location.coordinate.latitude
-           let longtitude = location.coordinate.longitude
+        
+        guard let location = locations.last
+        else {return}
+        let latitude = location.coordinate.latitude
+        let longtitude = location.coordinate.longitude
         
         // 지도 줌 레벨을 설정
-                let center = CLLocationCoordinate2D(latitude: latitude, longitude: longtitude)
-                let region = MKCoordinateRegion(center: center, latitudinalMeters: 500, longitudinalMeters: 500)
-                mapView.setRegion(region, animated: true)
-
-           if let previousCoordinate = self.previousCoordinate {
-               
-               let currentLocation = CLLocation(latitude: latitude, longitude: longtitude)
-                           let previousLocation = CLLocation(latitude: previousCoordinate.latitude, longitude: previousCoordinate.longitude)
-                           
-                           // 거리 계산
-                           let distance = currentLocation.distance(from: previousLocation) // meters
-                           totalDistance += distance
-                           
-                           // 거리 업데이트
-                           DispatchQueue.main.async { [weak self] in
-                               self?.updateDistanceLabel()
-                           }
-               
-               
-               var points: [CLLocationCoordinate2D] = []
-               let point1 = CLLocationCoordinate2DMake(previousCoordinate.latitude, previousCoordinate.longitude)
-               let point2: CLLocationCoordinate2D
-               = CLLocationCoordinate2DMake(latitude, longtitude)
-               points.append(point1)
-               points.append(point2)
-               let lineDraw = MKPolyline(coordinates: points, count:points.count)
-               self.mapView.addOverlay(lineDraw)
-           }
-
-           self.previousCoordinate = location.coordinate
-       }
+        let center = CLLocationCoordinate2D(latitude: latitude, longitude: longtitude)
+        let region = MKCoordinateRegion(center: center, latitudinalMeters: 500, longitudinalMeters: 500)
+        mapView.setRegion(region, animated: true)
+        
+        if let previousCoordinate = self.previousCoordinate {
+            
+            let currentLocation = CLLocation(latitude: latitude, longitude: longtitude)
+            let previousLocation = CLLocation(latitude: previousCoordinate.latitude, longitude: previousCoordinate.longitude)
+            
+            // 거리 계산
+            let distance = currentLocation.distance(from: previousLocation) // meters
+            totalDistance += distance
+            
+            // 거리 업데이트
+            DispatchQueue.main.async { [weak self] in
+                self?.updateDistanceLabel()
+            }
+            
+            
+            var points: [CLLocationCoordinate2D] = []
+            let point1 = CLLocationCoordinate2DMake(previousCoordinate.latitude, previousCoordinate.longitude)
+            let point2: CLLocationCoordinate2D
+            = CLLocationCoordinate2DMake(latitude, longtitude)
+            points.append(point1)
+            points.append(point2)
+            let lineDraw = MKPolyline(coordinates: points, count:points.count)
+            self.mapView.addOverlay(lineDraw)
+        }
+        
+        self.previousCoordinate = location.coordinate
+    }
 }
 
 extension RunningVC: MKMapViewDelegate {
