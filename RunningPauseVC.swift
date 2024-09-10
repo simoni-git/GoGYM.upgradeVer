@@ -7,9 +7,17 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 
 class RunningPauseVC: UIViewController {
+    
+    var context: NSManagedObjectContext {
+        guard let app = UIApplication.shared.delegate as? AppDelegate else {
+            fatalError()
+        }
+        return app.persistentContainer.viewContext
+    }
     
     
     @IBOutlet weak var mapView: MKMapView!
@@ -62,6 +70,30 @@ class RunningPauseVC: UIViewController {
     
     
     @IBAction func tapSaveBtn(_ sender: UIButton) {
+        /*
+         1. 코어데이터에 저장하기[v]
+         2. 홈뷰컨으로 이동하기
+         */
+        
+        // `RunningRecord` 엔티티에 새로운 객체 생성
+            let newRecord = NSEntityDescription.insertNewObject(forEntityName: "RunningModel", into: context)
+        // 시간, 거리, 날짜 저장
+           newRecord.setValue(Int64(runningTime), forKey: "time")
+           newRecord.setValue(totalDistance, forKey: "distance")
+           newRecord.setValue(Date(), forKey: "date")
+           
+        // 경로(폴리라인)를 바이너리 데이터로 변환하여 저장
+           let polylineData = try? NSKeyedArchiver.archivedData(withRootObject: polylineOverlays, requiringSecureCoding: false)
+           newRecord.setValue(polylineData, forKey: "route")
+        
+        do {
+               try context.save()
+               print("Record saved successfully!")
+           } catch {
+               print("Failed to save record: \(error)")
+           }
+            
+        
     }
     
     
