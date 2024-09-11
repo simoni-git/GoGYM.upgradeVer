@@ -72,7 +72,7 @@ class RunningPauseVC: UIViewController {
     @IBAction func tapSaveBtn(_ sender: UIButton) {
         /*
          1. 코어데이터에 저장하기[v]
-         2. 홈뷰컨으로 이동하기
+         2. 홈뷰컨으로 이동하기 [ ]
          */
         
         // `RunningRecord` 엔티티에 새로운 객체 생성
@@ -88,11 +88,13 @@ class RunningPauseVC: UIViewController {
         
         do {
                try context.save()
-               print("Record saved successfully!")
+               print("코어데이터에 런닝데이터 저장 성공")
            } catch {
-               print("Failed to save record: \(error)")
+               print("런닝데이터 저장실패.. 이유는 >> : \(error)")
            }
-            
+
+        // 모달 2개 한번에 지우기
+        self.presentingViewController?.presentingViewController?.dismiss(animated: true)
         
     }
     
