@@ -20,14 +20,37 @@ class RunningHistoryVC: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     // 코어데이터에서 가져온 런닝 기록을 저장할 배열
         var runningRecords: [NSManagedObject] = []
+        var isEditingMode: Bool = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.dataSource = self
         tableView.delegate = self
+        navigationItemSetting()
         fetchRunningData()
-        
+     
     }
+    
+    private func navigationItemSetting() {
+        let rightBtn = UIBarButtonItem(title: "편집", style: .plain, target: self, action: #selector(tapEditBtn))
+        self.navigationItem.rightBarButtonItem = rightBtn
+       
+    }
+    
+    @objc func tapEditBtn() {
+        if isEditingMode == false {
+            print("현재 isEditingMode 가 false 입니다. true 로 전환합니다")
+            self.tableView.setEditing(true, animated: true)
+            self.navigationItem.rightBarButtonItem?.title = "완료"
+            isEditingMode = true
+        } else {
+            print("현재 isEditingMode 가 true 입니다. false 로 전환합니다")
+            self.tableView.setEditing(false, animated: true)
+            self.navigationItem.rightBarButtonItem?.title = "편집"
+            isEditingMode = false
+        }
+    }
+   
     
     
     private func fetchRunningData() {
@@ -41,6 +64,15 @@ class RunningHistoryVC: UIViewController {
             print("데이터를 가져오는데 실패했습니다. 이유: \(error), \(error.userInfo)")
         }
     }
+    
+//    private func deleteRunningData() {
+//        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "RunningModel")
+//        do {
+//            
+//        } catch {
+//            
+//        }
+//    }
     
     
     
@@ -69,10 +101,20 @@ extension RunningHistoryVC: UITableViewDataSource , UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //셀 클릭시 디테일뷰컨으로 이동 + 정보 나타내기
+        //셀 클릭시 디테일뷰컨으로 이동 + 정보 나타내기[ ]
     }
     
-    //셀 삭제기능도 구현한ㄹ것(코어데이터에서도 지워야함.)
+    
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            runningRecords.remove(at: indexPath.row)
+            //이부분에 코어데이터 삭제 하면 될듯
+            
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        }
+    }
+    
     
     
 }
