@@ -65,14 +65,17 @@ class RunningHistoryVC: UIViewController {
         }
     }
     
-//    private func deleteRunningData() {
-//        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "RunningModel")
-//        do {
-//            
-//        } catch {
-//            
-//        }
-//    }
+    private func deleteRunningData(at indexpath: IndexPath) {
+        let runningRecordToDelete = runningRecords[indexpath.row]
+        context.delete(runningRecordToDelete)
+        do {
+            try context.save()
+            runningRecords.remove(at: indexpath.row)
+            tableView.deleteRows(at: [indexpath], with: .automatic)
+        } catch {
+            print("오류발생: \(error)")
+        }
+    }
     
     
     
@@ -108,10 +111,7 @@ extension RunningHistoryVC: UITableViewDataSource , UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            runningRecords.remove(at: indexPath.row)
-            //이부분에 코어데이터 삭제 하면 될듯
-            
-            tableView.deleteRows(at: [indexPath], with: .fade)
+           deleteRunningData(at: indexPath)
         }
     }
     
